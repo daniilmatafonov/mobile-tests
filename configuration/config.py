@@ -10,13 +10,13 @@ load_dotenv()
 
 EnvContext = Literal['browserstack', 'emulation', 'real']
 
-USER = os.getenv('LOGIN')
-KEY = os.getenv('KEY')
-APPIUM_BROWSERSTACK = os.getenv('APPIUM_BROWSERSTACK')
+USER = os.getenv('LOGIN', 'dmatafonov1')
+KEY = os.getenv('KEY', 'BdGpepMx8e9EhhxExqqj')
+APPIUM_BROWSERSTACK = os.getenv('APPIUM_BROWSERSTACK', 'hub-cloud.browserstack.com')
 
 
 class Settings(pydantic.BaseSettings):
-    context: EnvContext = 'browserstack'
+    context: EnvContext = 'emulation'
 
     platformName: Optional[str] = None
     os_version: Optional[str] = None

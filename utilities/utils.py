@@ -2,6 +2,8 @@ import allure
 from allure_commons.types import AttachmentType
 from pathlib import Path
 
+import tests
+
 
 def add_video(browser):
     video_url = f"https://app-automate.browserstack.com/s3-upload/bs-video-logs-euw/s3.eu-west-1/{browser.driver.session_id}/video-" + browser.driver.session_id +".mp4"
@@ -11,8 +13,11 @@ def add_video(browser):
 
 def abs_path(relative_path: str):
     return (
-        Path(__file__)
-        .parent.parent.joinpath(relative_path)
+        Path(tests.__file__)
+        .parent
+        .parent
+        .joinpath('configuration/')
+        .joinpath(relative_path)
         .absolute()
         .__str__()
     )
