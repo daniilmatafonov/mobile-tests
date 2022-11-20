@@ -1,66 +1,68 @@
 import allure
 import pytest
-from allure_commons._allure import StepContext, step
-from appium import webdriver
+import os
+from allure_commons._allure import step
 from appium.webdriver.common.appiumby import AppiumBy
-from selene import have, be
-from selene.support._logging import wait_with
+from selene import have
+from dotenv import load_dotenv
+from appium import webdriver
+from datetime import date
 from selene.support.shared import browser
-
-from configuration import config
-from utilities.utils import add_video
-
-FIRST_CHECK_EXPECT = 'The Free Encyclopedia'
-SECOND_CHECK_EXPECT = 'New ways to explore'
-THIRD_CHECK_EXPECT = 'Reading lists with sync'
-FORTH_CHECK_EXPECT = 'Send anonymous data'
-
-textView = "org.wikipedia.alpha:id/primaryTextView"
-forwardButton = "org.wikipedia.alpha:id/fragment_onboarding_forward_button"
+from utilities.attachment import add_video
 
 
-@pytest.fixture(scope='function', autouse=True)
+@pytest.fixture(scope='session', autouse=True)
+def load_env():
+    load_dotenv()
+
+
+@pytest.fixture(scope='function')
 def init():
-    browser.config.timeout = config.settings.timeout
-    browser.config._wait_decorator = wait_with(
-        context=StepContext
-    )
-
+    USER = os.getenv('LOGIN', 'daniilmatafonov1')
+    KEY = os.getenv('KEY', 'BdGpepMx8e9EhhxExqqj')
+    APPIUM_BROWSERSTACK = os.getenv('APPIUM_BROWSERSTACK', 'hub-cloud.browserstack.com')
+    desired_cap = {
+        "app": "bs://c700ce60cf13ae8ed97705a55b8e022f13c5827c",
+        "deviceName": "Google Pixel 3",
+        "platformVersion": "9.0",
+        "platformName": "android",
+        "project": "Python project",
+        "build": "browserstack-build-" + str(date.today()),
+        'bstack:options': {
+            "projectName": "Mobile tests",
+            "buildName": "browserstack-build-DEMO2",
+            "sessionName": "BStack second_test"
+        }
+    }
     browser.config.driver = webdriver.Remote(
-        config.settings.remote_url, options=config.settings.driver_options
+        command_executor=f"https://{USER}:{KEY}@{APPIUM_BROWSERSTACK}/wd/hub",
+        desired_capabilities=desired_cap
     )
-
-    return browser
+    browser.config.timeout = 4
+    yield init
+    browser.quit()
 
 
 @allure.tag('mobile')
-@allure.title('Test screen checking')
-def test_skip_wiki_search_screens():
-    with step('First screen checking'):
-        print(browser.config.desired_capabilities)
-        browser.element((AppiumBy.ID, textView)) \
-            .should(have.text(FIRST_CHECK_EXPECT))
-        browser.element((AppiumBy.ID, forwardButton)).click()
-        add_video(browser)
+@allure.title('Test search')
+def test_wiki_browserstack(init):
+    with step('Type search'):
+        browser.element((AppiumBy.ACCESSIBILITY_ID, 'Search Wikipedia')).click()
+        browser.element((AppiumBy.ID, "org.wikipedia.alpha:id/search_src_text")).type('BrowserStack')
+    with step('Verify content found'):
+        browser.all((AppiumBy.ID, 'org.wikipedia.alpha:id/page_list_item_title'))\
+            .should(have.size_greater_than(0))
+    add_video(browser)
 
-    with step('Second screen checking'):
-        browser.element((AppiumBy.ID, textView)) \
-            .should(have.text(SECOND_CHECK_EXPECT))
-        browser.element((AppiumBy.ID, forwardButton)).click()
-        add_video(browser)
 
-    with step('Third screen checking'):
-        browser.element((AppiumBy.ID, textView)) \
-            .should(have.exact_text(THIRD_CHECK_EXPECT))
-        browser.element((AppiumBy.ID, forwardButton)).click()
-        add_video(browser)
-
-    with step('Fourth screen checking'):
-        browser.element((AppiumBy.ID, textView)) \
-            .should(have.text(FORTH_CHECK_EXPECT))
-        browser.element((AppiumBy.ID, "org.wikipedia.alpha:id/fragment_onboarding_done_button")).click()
-        browser.element((AppiumBy.ID, "org.wikipedia.alpha:id/search_container")) \
-            .should(be.visible)
-        add_video(browser)
-
-    browser.quit()
+@allure.tag('mobile')
+@allure.title('Test search')
+def test_wiki_sqa(init):
+    with step('Type search'):
+        browser.element((AppiumBy.ACCESSIBILITY_ID, 'Search Wikipedia')).click()
+        browser.element((AppiumBy.ID, "org.wikipedia.alpha:id/search_src_text")).type("Software quality assurance")
+    with step('Verify content found'):
+        browser.all(
+            (AppiumBy.ID, 'org.wikipedia.alpha:id/page_list_item_title')
+        ).should(have.size_greater_than(0))
+    add_video(browser)
